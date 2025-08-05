@@ -79,7 +79,7 @@
             messageDiv.textContent = '';
 
             try {
-                const response = await fetchWithAuth('http://localhost:3001/change-password', {
+                const response = await fetchWithAuth('https://ai-backend-jukm.onrender.com/change-password', {
                     method: 'POST',
                     body: JSON.stringify({ currentPassword, newPassword })
                 });
