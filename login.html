@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تسجيل الدخول</title>
+    <!-- ... قسم style هنا كما كان لم يتغير ... -->
+    <style> body { font-family: system-ui, sans-serif; background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; } .container { background-color: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); width: 400px; text-align: center; } h2 { margin-top: 0; color: #1c1e21; } .input-group { margin-bottom: 20px; text-align: right; } label { display: block; margin-bottom: 5px; font-weight: 600; color: #606770; } input { width: 100%; padding: 12px; border: 1px solid #dddfe2; border-radius: 6px; box-sizing: border-box; font-size: 16px; } button { width: 100%; padding: 12px; background-color: #1877f2; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 18px; font-weight: bold; } .message { margin-top: 20px; font-weight: bold; padding: 10px; border-radius: 6px; } .success { color: #155724; background-color: #d4edda; } .error { color: #721c24; background-color: #f8d7da; } </style>
+</head>
+<body>
+    <div class="container">
+        <h2>تسجيل الدخول إلى حسابك</h2>
+        <form id="loginForm">
+            <div class="input-group">
+                <label for="email">البريد الإلكتروني:</label>
+                <input type="email" id="email" required>
+            </div>
+            <div class="input-group">
+                <label for="password">كلمة المرور:</label>
+                <input type="password" id="password" required>
+            </div>
+            <button type="submit" id="submitButton">دخول</button>
+        </form>
+        <div id="message" class="message" style="display: none;"></div>
+        <p style="margin-top: 20px;">ليس لديك حساب؟ <a href="index.html">أنشئ حسابًا جديدًا</a></p>
+    </div>
+
+    <script>
+        const form = document.getElementById('loginForm');
+        const submitButton = document.getElementById('submitButton');
+        const messageDiv = document.getElementById('message');
+
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault(); 
+            messageDiv.style.display = 'none';
+            submitButton.disabled = true;
+            submitButton.textContent = 'جارٍ التحقق...';
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                const response = await fetch('http://localhost:3001/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const result = await response.json(); 
+
+                if (response.ok) {
+                    // --- التغيير الكبير هنا ---
+                    // 1. نحفظ التوكن ومعلومات المستخدم في الذاكرة الدائمة للمتصفح
+                    localStorage.setItem('accessToken', result.accessToken);
+                    localStorage.setItem('loggedInUser', JSON.stringify(result.user));
+                    
+                    // 2. ننتظر ثانية واحدة فقط ليرى المستخدم رسالة النجاح
+                    messageDiv.textContent = "تم تسجيل الدخول بنجاح! جارٍ التوجيه...";
+                    messageDiv.className = 'message success';
+                    messageDiv.style.display = 'block';
+
+                    setTimeout(() => {
+                        window.location.href = 'dashboard.html';
+                    }, 1000);
+                } else {
+                    messageDiv.textContent = result.message;
+                    messageDiv.className = 'message error';
+                    messageDiv.style.display = 'block';
+                    submitButton.disabled = false;
+                    submitButton.textContent = 'دخول';
+                }
+            } catch (error) {
+                messageDiv.textContent = 'فشل الاتصال بالخادم.';
+                messageDiv.className = 'message error';
+                messageDiv.style.display = 'block';
+                submitButton.disabled = false;
+                submitButton.textContent = 'دخول';
+            }
+        });
+    </script>
+</body>
+</html>

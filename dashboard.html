@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إنشاء صورة بالذكاء الاصطناعي</title>
+    <style>
+        body { font-family: system-ui, sans-serif; background-color: #121212; color: #e0e0e0; margin: 0; }
+        .header { display: flex; justify-content: space-between; align-items: center; background-color: #1e1e1e; padding: 10px 20px; border-bottom: 1px solid #333; }
+        .welcome-message { font-size: 20px; color: #ffffff; }
+        .header-buttons { display: flex; align-items: center; gap: 15px; }
+        .header-buttons button, .header-buttons a {
+            color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer;
+            font-size: 16px; font-weight: bold; transition: background-color 0.2s; text-decoration: none; display: inline-block;
+        }
+        #logout-button { background-color: #b71c1c; }
+        #logout-button:hover { background-color: #d32f2f; }
+        .settings-link { background-color: #6c757d; }
+        .settings-link:hover { background-color: #5a6268; }
+        .main-content { max-width: 800px; margin: 40px auto; padding: 30px; background-color: #1e1e1e; border-radius: 8px; border: 1px solid #333; }
+        h2 { color: #ffffff; text-align: center; }
+        #prompt-form { display: flex; gap: 10px; margin-bottom: 20px; }
+        #prompt-input { flex-grow: 1; padding: 15px; font-size: 16px; border: 1px solid #444; border-radius: 6px; background-color: #2b2b2b; color: #e0e0e0; }
+        #prompt-input::placeholder { color: #888; }
+        #generate-button { padding: 15px 30px; font-size: 16px; font-weight: bold; color: white; background-color: #0d6efd; border: none; border-radius: 6px; cursor: pointer; transition: background-color 0.2s; }
+        #generate-button:disabled { background-color: #0d6efd; opacity: 0.5; cursor: not-allowed; }
+        #surprise-me-button { padding: 15px; font-size: 14px; font-weight: bold; color: #ffffff; background-color: #343a40; border: 1px solid #495057; border-radius: 6px; cursor: pointer; white-space: nowrap; transition: background-color 0.2s; }
+        #surprise-me-button:hover { background-color: #495057; }
+        #image-container { display: flex; justify-content: center; align-items: center; min-height: 512px; border: 2px dashed #444; border-radius: 8px; background-color: #2b2b2b; position: relative; }
+        #image-placeholder { max-width: 100%; max-height: 512px; border-radius: 6px; }
+        .loader-text { font-size: 18px; color: #aaa; }
+        #download-button { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); padding: 12px 25px; font-size: 16px; font-weight: bold; color: white; background-color: #198754; border: none; border-radius: 6px; cursor: pointer; display: none; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        .feedback-section { max-width: 800px; margin: 40px auto; padding: 30px; background-color: #1e1e1e; border-radius: 8px; border: 1px solid #333; text-align: center; }
+        #feedback-textarea { width: 100%; min-height: 100px; padding: 15px; font-size: 16px; border: 1px solid #444; border-radius: 6px; background-color: #2b2b2b; color: #e0e0e0; resize: vertical; margin-bottom: 15px; box-sizing: border-box; }
+        #feedback-button { padding: 12px 30px; font-size: 16px; font-weight: bold; color: white; background-color: #6c757d; border: none; border-radius: 6px; cursor: pointer; transition: background-color 0.2s; }
+        #feedback-button:hover { background-color: #5a6268; }
+        .feedback-message { margin-top: 15px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="welcome-message">
+            أهلاً بك، <span id="username-placeholder"></span>!
+        </div>
+        <div class="header-buttons">
+            <a href="settings.html" class="settings-link">الإعدادات</a>
+            <button id="logout-button">تسجيل الخروج</button>
+        </div>
+    </div>
+    <div class="main-content">
+        <h2>اكتب وصفًا دقيقًا للصورة التي تتخيلها</h2>
+        <form id="prompt-form">
+            <button type="button" id="surprise-me-button">فاجئني!</button>
+            <input type="text" id="prompt-input" placeholder="...أو دعنا نفاجئك بوصف إبداعي" required>
+            <button type="submit" id="generate-button">أنشئ الصورة</button>
+        </form>
+        <div id="image-container">
+            <p class="loader-text" id="status-text">سيتم عرض الصورة هنا...</p>
+            <img id="image-placeholder" src="" alt="الصورة المُنشأة" style="display: none;">
+            <button id="download-button">تحميل الصورة</button>
+        </div>
+    </div>
+    <div class="feedback-section">
+        <h2>هل لديك اقتراح لتحسين الموقع؟</h2>
+        <p style="color: #aaa; margin-top: -10px; margin-bottom: 20px;">نحن نقدر رأيك كثيرًا! ساعدنا على تطوير التطبيق.</p>
+        <form id="feedback-form">
+            <textarea id="feedback-textarea" placeholder="اكتب اقتراحك هنا..." required></textarea>
+            <button type="submit" id="feedback-button">إرسال الاقتراح</button>
+        </form>
+        <p id="feedback-message" class="feedback-message" style="display: none;"></p>
+    </div>
+
+    <script>
+        // الجزء الأول: تعريف كل العناصر التي نحتاجها
+        const surpriseMePrompts = [ 'A photorealistic image...', 'An oil painting...' ];
+        const promptForm = document.getElementById('prompt-form');
+        const generateButton = document.getElementById('generate-button');
+        const promptInput = document.getElementById('prompt-input');
+        const surpriseMeButton = document.getElementById('surprise-me-button');
+        const imagePlaceholder = document.getElementById('image-placeholder');
+        const statusText = document.getElementById('status-text');
+        const downloadButton = document.getElementById('download-button');
+        const feedbackForm = document.getElementById('feedback-form');
+        const feedbackTextarea = document.getElementById('feedback-textarea');
+        const feedbackButton = document.getElementById('feedback-button');
+        const feedbackMessage = document.getElementById('feedback-message');
+        const logoutButton = document.getElementById('logout-button');
+        const usernamePlaceholder = document.getElementById('username-placeholder');
+
+        // الجزء الثاني: دالة مساعدة لإرسال الطلبات الآمنة
+        async function fetchWithAuth(url, options = {}) {
+            const token = localStorage.getItem('accessToken');
+            const headers = { 'Content-Type': 'application/json', ...options.headers };
+            if (token) { headers['Authorization'] = `Bearer ${token}`; }
+            return fetch(url, { ...options, headers });
+        }
+
+        // الجزء الثالث: برمجة الوظائف
+        function getRandomPrompt() { return surpriseMePrompts[Math.floor(Math.random() * surpriseMePrompts.length)]; }
+
+        surpriseMeButton.addEventListener('click', () => { promptInput.value = getRandomPrompt(); });
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const userString = localStorage.getItem('loggedInUser');
+            const token = localStorage.getItem('accessToken');
+            if (!userString || !token) { window.location.href = 'login.html'; } 
+            else { const user = JSON.parse(userString); usernamePlaceholder.textContent = user.username; }
+        });
+
+        logoutButton.addEventListener('click', () => {
+            localStorage.removeItem('loggedInUser');
+            localStorage.removeItem('accessToken');
+            window.location.href = 'login.html';
+        });
+
+        promptForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const prompt = promptInput.value;
+            if (!prompt) { alert("الرجاء كتابة وصف للصورة."); return; }
+            
+            generateButton.disabled = true;
+            generateButton.textContent = 'جارٍ الإنشاء...';
+            statusText.textContent = 'الذكاء الاصطنا...';
+            statusText.style.display = 'block';
+            imagePlaceholder.style.display = 'none';
+            downloadButton.style.display = 'none';
+
+            try {
+                const response = await fetchWithAuth('http://localhost:3001/generate-image', { method: 'POST', body: JSON.stringify({ prompt: prompt }) });
+                if (!response.ok) { throw new Error((await response.json()).error); }
+                const result = await response.json();
+                imagePlaceholder.src = `data:image/png;base64,${result.photo}`;
+                imagePlaceholder.style.display = 'block';
+                statusText.style.display = 'none';
+                downloadButton.style.display = 'block';
+            } catch (error) {
+                statusText.textContent = `فشل: ${error.message}`;
+            }
+            generateButton.disabled = false;
+            generateButton.textContent = 'أنشئ الصورة';
+        });
+
+        downloadButton.addEventListener('click', () => {
+            const link = document.createElement('a');
+            link.href = imagePlaceholder.src;
+            link.download = 'image-from-ai.png';
+            link.click();
+        });
+
+        feedbackForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const content = feedbackTextarea.value;
+            if (!content) return;
+            
+            feedbackButton.disabled = true;
+            feedbackButton.textContent = 'جارٍ الإرسال...';
+            try {
+                const response = await fetchWithAuth('http://localhost:3001/submit-feedback', { method: 'POST', body: JSON.stringify({ content: content }) });
+                const result = await response.json();
+                if (!response.ok) { throw new Error(result.error); }
+                feedbackTextarea.value = '';
+                feedbackMessage.textContent = result.message;
+                feedbackMessage.style.color = 'lightgreen';
+                feedbackMessage.style.display = 'block';
+            } catch(error) {
+                feedbackMessage.textContent = error.message;
+                feedbackMessage.style.color = 'salmon';
+                feedbackMessage.style.display = 'block';
+            }
+            feedbackButton.disabled = false;
+            feedbackButton.textContent = 'إرسال الاقتراح';
+        });
+    </script>
+</body>
+</html>```

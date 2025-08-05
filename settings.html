@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إعدادات الحساب</title>
+    <style>
+        body { font-family: system-ui, sans-serif; background-color: #121212; color: #e0e0e0; margin: 0; }
+        .header { display: flex; justify-content: space-between; align-items: center; background-color: #1e1e1e; padding: 10px 20px; border-bottom: 1px solid #333; }
+        .header-title { font-size: 24px; color: #ffffff; }
+        .back-link { font-size: 16px; font-weight: bold; color: #ffffff; text-decoration: none; background-color: #0d6efd; padding: 10px 20px; border-radius: 6px; transition: background-color 0.2s; }
+        .back-link:hover { background-color: #0b5ed7; }
+        .container { max-width: 600px; margin: 40px auto; padding: 30px; background-color: #1e1e1e; border-radius: 8px; border: 1px solid #333; }
+        h2 { color: #ffffff; text-align: center; }
+        .input-group { margin-bottom: 20px; text-align: right; }
+        label { display: block; margin-bottom: 5px; font-weight: 600; color: #aaa; }
+        input { width: 100%; padding: 12px; font-size: 16px; border: 1px solid #444; border-radius: 6px; background-color: #2b2b2b; color: #e0e0e0; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; font-size: 16px; font-weight: bold; color: white; background-color: #198754; border: none; border-radius: 6px; cursor: pointer; transition: background-color 0.2s; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        .message { margin-top: 15px; font-weight: bold; text-align: center; }
+        .success { color: lightgreen; }
+        .error { color: salmon; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1 class="header-title">إعدادات الحساب</h1>
+        <a href="dashboard.html" class="back-link">العودة إلى لوحة التحكم</a>
+    </div>
+
+    <div class="container">
+        <h2>تغيير كلمة المرور</h2>
+        <form id="password-form">
+            <div class="input-group">
+                <label for="current-password">كلمة المرور الحالية:</label>
+                <input type="password" id="current-password" required>
+            </div>
+            <div class="input-group">
+                <label for="new-password">كلمة المرور الجديدة:</label>
+                <input type="password" id="new-password" required>
+            </div>
+            <button type="submit" id="submit-button">حفظ التغييرات</button>
+        </form>
+        <p id="message" class="message"></p>
+    </div>
+
+    <script>
+        // الجزء الأول: تعريف كل العناصر التي نحتاجها
+        const form = document.getElementById('password-form');
+        const submitButton = document.getElementById('submit-button');
+        const messageDiv = document.getElementById('message');
+        const currentPasswordInput = document.getElementById('current-password');
+        const newPasswordInput = document.getElementById('new-password');
+
+        // الجزء الثاني: دالة مساعدة لإرسال الطلبات الآمنة
+        async function fetchWithAuth(url, options = {}) {
+            const token = localStorage.getItem('accessToken');
+            const headers = { 'Content-Type': 'application/json', ...options.headers };
+            if (token) { headers['Authorization'] = `Bearer ${token}`; }
+            return fetch(url, { ...options, headers });
+        }
+
+        // الجزء الثالث: حارس الأمن لهذه الصفحة
+        window.addEventListener('DOMContentLoaded', () => {
+            if (!localStorage.getItem('accessToken')) {
+                alert("يجب عليك تسجيل الدخول أولاً.");
+                window.location.href = 'login.html';
+            }
+        });
+
+        // الجزء الرابع: برمجة وظيفة تغيير كلمة المرور
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const currentPassword = currentPasswordInput.value;
+            const newPassword = newPasswordInput.value;
+            
+            submitButton.disabled = true;
+            submitButton.textContent = 'جارٍ الحفظ...';
+            messageDiv.textContent = '';
+
+            try {
+                const response = await fetchWithAuth('http://localhost:3001/change-password', {
+                    method: 'POST',
+                    body: JSON.stringify({ currentPassword, newPassword })
+                });
+
+                const result = await response.json();
+                if (!response.ok) { throw new Error(result.error); }
+                
+                messageDiv.textContent = result.message;
+                messageDiv.className = 'message success';
+                form.reset();
+
+            } catch (error) {
+                messageDiv.textContent = `فشل: ${error.message}`;
+                messageDiv.className = 'message error';
+            }
+
+            submitButton.disabled = false;
+            submitButton.textContent = 'حفظ التغييرات';
+        });
+    </script>
+</body>
+</html>

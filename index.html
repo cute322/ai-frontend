@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إنشاء حساب جديد</title>
+    <style>
+        body { font-family: system-ui, sans-serif; background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .container { background-color: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); width: 400px; text-align: center; }
+        h2 { margin-top: 0; color: #1c1e21; }
+        .input-group { margin-bottom: 20px; text-align: right; }
+        label { display: block; margin-bottom: 5px; font-weight: 600; color: #606770; }
+        input { width: 100%; padding: 12px; border: 1px solid #dddfe2; border-radius: 6px; box-sizing: border-box; font-size: 16px; }
+        button { width: 100%; padding: 12px; background-color: #1877f2; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 18px; font-weight: bold; }
+        button:hover { background-color: #166fe5; }
+        button:disabled { background-color: #a0bdf0; cursor: not-allowed; }
+        .message { margin-top: 20px; font-weight: bold; padding: 10px; border-radius: 6px; }
+        .success { color: #155724; background-color: #d4edda; border: 1px solid #c3e6cb; }
+        .error { color: #721c24; background-color: #f8d7da; border: 1px solid #f5c6cb; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>إنشاء حساب جديد</h2>
+        <form id="registerForm">
+            <div class="input-group">
+                <label for="username">اسم المستخدم:</label>
+                <input type="text" id="username" name="username" required>
+            </div>
+            <div class="input-group">
+                <label for="email">البريد الإلكتروني:</label>
+                <input type="email" id="email" name="email" required>
+            </div>
+            <div class="input-group">
+                <label for="password">كلمة المرور:</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            <button type="submit" id="submitButton">إنشاء الحساب</button>
+        </form>
+        <div id="message" class="message" style="display: none;"></div>
+    </div>
+
+    <script>
+        const form = document.getElementById('registerForm');
+        const submitButton = document.getElementById('submitButton');
+        const messageDiv = document.getElementById('message');
+
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault(); 
+            
+            messageDiv.style.display = 'none';
+            submitButton.disabled = true;
+            submitButton.textContent = 'جارٍ الإنشاء...';
+
+            const username = document.getElementById('username').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            // ***** سطر التصحيح الجديد *****
+            // قبل إرسال أي شيء، نطبع البيانات في شاشة Console المتصفح
+            console.log("البيانات التي سترسل إلى الخادم:", { username, email, password });
+
+            try {
+                const response = await fetch('http://localhost:3001/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, email, password })
+                });
+                
+                const result = await response.json(); 
+
+                if (response.ok) {
+                    messageDiv.textContent = result.message;
+                    messageDiv.className = 'message success';
+                } else {
+                    messageDiv.textContent = result.message || 'حدث خطأ غير معروف.';
+                    messageDiv.className = 'message error';
+                }
+
+            } catch (networkError) {
+                console.error("Network Error:", networkError);
+                messageDiv.textContent = 'فشل الاتصال بالخادم. يرجى التأكد من أنه يعمل والمحاولة مرة أخرى.';
+                messageDiv.className = 'message error';
+            }
+            
+            submitButton.disabled = false;
+            submitButton.textContent = 'إنشاء الحساب';
+            messageDiv.style.display = 'block';
+        });
+    </script>
+
+</body>
+</html>
