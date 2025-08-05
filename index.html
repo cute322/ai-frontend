@@ -15,8 +15,8 @@
         button:hover { background-color: #166fe5; }
         button:disabled { background-color: #a0bdf0; cursor: not-allowed; }
         .message { margin-top: 20px; font-weight: bold; padding: 10px; border-radius: 6px; }
-        .success { color: #155724; background-color: #d4edda; border: 1px solid #c3e6cb; }
-        .error { color: #721c24; background-color: #f8d7da; border: 1px solid #f5c6cb; }
+        .success { color: #155724; background-color: #d4edda; }
+        .error { color: #721c24; background-color: #f8d7da; }
     </style>
 </head>
 <body>
@@ -39,6 +39,9 @@
             <button type="submit" id="submitButton">إنشاء الحساب</button>
         </form>
         <div id="message" class="message" style="display: none;"></div>
+
+        <!-- ----- هذا هو السطر الأول الذي تم تصحيحه وإضافته ----- -->
+        <p style="margin-top: 20px;">لديك حساب بالفعل؟ <a href="./login.html">سجل الدخول</a></p>
     </div>
 
     <script>
@@ -57,37 +60,41 @@
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
 
-            // ***** سطر التصحيح الجديد *****
-            // قبل إرسال أي شيء، نطبع البيانات في شاشة Console المتصفح
-            console.log("البيانات التي سترسل إلى الخادم:", { username, email, password });
-
             try {
+                // ملاحظة: الرابط هنا صحيح ويستخدم عنوان الخادم المنشور
                 const response = await fetch('https://ai-backend-jukm.onrender.com/register', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ username, email, password })
                 });
                 
                 const result = await response.json(); 
 
                 if (response.ok) {
-                    messageDiv.textContent = result.message;
+                    messageDiv.textContent = result.message + " سيتم توجيهك لتسجيل الدخول...";
                     messageDiv.className = 'message success';
+                    
+                    // ----- هذا هو السطر الثاني الذي تم تصحيحه -----
+                    // إعادة توجيه المستخدم إلى صفحة تسجيل الدخول بعد ثانيتين
+                    setTimeout(() => {
+                        window.location.href = './login.html';
+                    }, 2000); // 2000 ميلي ثانية = 2 ثانية
+
                 } else {
                     messageDiv.textContent = result.message || 'حدث خطأ غير معروف.';
                     messageDiv.className = 'message error';
+                    submitButton.disabled = false;
+                    submitButton.textContent = 'إنشاء الحساب';
                 }
 
             } catch (networkError) {
                 console.error("Network Error:", networkError);
                 messageDiv.textContent = 'فشل الاتصال بالخادم. يرجى التأكد من أنه يعمل والمحاولة مرة أخرى.';
                 messageDiv.className = 'message error';
+                submitButton.disabled = false;
+                submitButton.textContent = 'إنشاء الحساب';
             }
             
-            submitButton.disabled = false;
-            submitButton.textContent = 'إنشاء الحساب';
             messageDiv.style.display = 'block';
         });
     </script>

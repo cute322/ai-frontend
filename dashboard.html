@@ -43,7 +43,8 @@
             أهلاً بك، <span id="username-placeholder"></span>!
         </div>
         <div class="header-buttons">
-            <a href="settings.html" class="settings-link">الإعدادات</a>
+            <!-- ----- هذا هو السطر الأول الذي تم تصحيحه ----- -->
+            <a href="./settings.html" class="settings-link">الإعدادات</a>
             <button id="logout-button">تسجيل الخروج</button>
         </div>
     </div>
@@ -71,8 +72,10 @@
     </div>
 
     <script>
-        // الجزء الأول: تعريف كل العناصر التي نحتاجها
-        const surpriseMePrompts = [ 'A photorealistic image...', 'An oil painting...' ];
+        // --- التغيير هنا: تعريف ثابت لعنوان الخادم لتسهيل التعديل مستقبلاً ---
+        const API_BASE_URL = 'https://ai-backend-jukm.onrender.com';
+
+        const surpriseMePrompts = [ 'A photorealistic image...', 'An oil painting...' ]; // يمكنك إضافة المزيد هنا
         const promptForm = document.getElementById('prompt-form');
         const generateButton = document.getElementById('generate-button');
         const promptInput = document.getElementById('prompt-input');
@@ -87,7 +90,6 @@
         const logoutButton = document.getElementById('logout-button');
         const usernamePlaceholder = document.getElementById('username-placeholder');
 
-        // الجزء الثاني: دالة مساعدة لإرسال الطلبات الآمنة
         async function fetchWithAuth(url, options = {}) {
             const token = localStorage.getItem('accessToken');
             const headers = { 'Content-Type': 'application/json', ...options.headers };
@@ -95,7 +97,6 @@
             return fetch(url, { ...options, headers });
         }
 
-        // الجزء الثالث: برمجة الوظائف
         function getRandomPrompt() { return surpriseMePrompts[Math.floor(Math.random() * surpriseMePrompts.length)]; }
 
         surpriseMeButton.addEventListener('click', () => { promptInput.value = getRandomPrompt(); });
@@ -103,37 +104,43 @@
         window.addEventListener('DOMContentLoaded', () => {
             const userString = localStorage.getItem('loggedInUser');
             const token = localStorage.getItem('accessToken');
-            if (!userString || !token) { window.location.href = 'login.html'; } 
-            else { const user = JSON.parse(userString); usernamePlaceholder.textContent = user.username; }
+            if (!userString || !token) { 
+                // ----- هذا هو السطر الثاني الذي تم تصحيحه -----
+                window.location.href = './login.html'; 
+            } else { 
+                const user = JSON.parse(userString); 
+                usernamePlaceholder.textContent = user.username; 
+            }
         });
 
         logoutButton.addEventListener('click', () => {
             localStorage.removeItem('loggedInUser');
             localStorage.removeItem('accessToken');
-            window.location.href = 'login.html';
+            // ----- هذا هو السطر الثالث الذي تم تصحيحه -----
+            window.location.href = './login.html';
         });
 
         promptForm.addEventListener('submit', async (event) => {
             event.preventDefault();
             const prompt = promptInput.value;
             if (!prompt) { alert("الرجاء كتابة وصف للصورة."); return; }
-            
             generateButton.disabled = true;
             generateButton.textContent = 'جارٍ الإنشاء...';
-            statusText.textContent = 'الذكاء الاصطنا...';
+            statusText.textContent = 'الذكاء الاصطناعي يعمل، قد تستغرق العملية وقتاً...';
             statusText.style.display = 'block';
             imagePlaceholder.style.display = 'none';
             downloadButton.style.display = 'none';
-
             try {
-                const response = await fetchWithAuth('http://localhost:3001/generate-image', { method: 'POST', body: JSON.stringify({ prompt: prompt }) });
-                if (!response.ok) { throw new Error((await response.json()).error); }
+                // ----- هذا هو السطر الرابع الذي تم تصحيحه -----
+                const response = await fetchWithAuth(`${API_BASE_URL}/generate-image`, { method: 'POST', body: JSON.stringify({ prompt: prompt }) });
+                if (!response.ok) { const errorResult = await response.json().catch(() => null); throw new Error(errorResult?.error || `فشل الخادم برمز الحالة ${response.status}`); }
                 const result = await response.json();
                 imagePlaceholder.src = `data:image/png;base64,${result.photo}`;
                 imagePlaceholder.style.display = 'block';
                 statusText.style.display = 'none';
                 downloadButton.style.display = 'block';
             } catch (error) {
+                console.error("Caught Error:", error);
                 statusText.textContent = `فشل: ${error.message}`;
             }
             generateButton.disabled = false;
@@ -151,13 +158,13 @@
             event.preventDefault();
             const content = feedbackTextarea.value;
             if (!content) return;
-            
             feedbackButton.disabled = true;
             feedbackButton.textContent = 'جارٍ الإرسال...';
             try {
-                const response = await fetchWithAuth('https://ai-backend-jukm.onrender.com/submit-feedback', { method: 'POST', body: JSON.stringify({ content: content }) });
+                // ----- هذا هو السطر الخامس الذي تم تصحيحه -----
+                const response = await fetchWithAuth(`${API_BASE_URL}/submit-feedback`, { method: 'POST', body: JSON.stringify({ content: content }) });
                 const result = await response.json();
-                if (!response.ok) { throw new Error(result.error); }
+                if (!response.ok) { throw new Error(result.error || 'فشل إرسال الاقتراح.'); }
                 feedbackTextarea.value = '';
                 feedbackMessage.textContent = result.message;
                 feedbackMessage.style.color = 'lightgreen';
@@ -172,4 +179,4 @@
         });
     </script>
 </body>
-</html>```
+</html>

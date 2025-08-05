@@ -25,7 +25,8 @@
 <body>
     <div class="header">
         <h1 class="header-title">إعدادات الحساب</h1>
-        <a href="dashboard.html" class="back-link">العودة إلى لوحة التحكم</a>
+        <!-- ----- هذا هو السطر الأول الذي تم تصحيحه ----- -->
+        <a href="./dashboard.html" class="back-link">العودة إلى لوحة التحكم</a>
     </div>
 
     <div class="container">
@@ -45,14 +46,14 @@
     </div>
 
     <script>
-        // الجزء الأول: تعريف كل العناصر التي نحتاجها
+        const API_BASE_URL = 'https://ai-backend-jukm.onrender.com';
+
         const form = document.getElementById('password-form');
         const submitButton = document.getElementById('submit-button');
         const messageDiv = document.getElementById('message');
         const currentPasswordInput = document.getElementById('current-password');
         const newPasswordInput = document.getElementById('new-password');
 
-        // الجزء الثاني: دالة مساعدة لإرسال الطلبات الآمنة
         async function fetchWithAuth(url, options = {}) {
             const token = localStorage.getItem('accessToken');
             const headers = { 'Content-Type': 'application/json', ...options.headers };
@@ -60,15 +61,14 @@
             return fetch(url, { ...options, headers });
         }
 
-        // الجزء الثالث: حارس الأمن لهذه الصفحة
         window.addEventListener('DOMContentLoaded', () => {
             if (!localStorage.getItem('accessToken')) {
                 alert("يجب عليك تسجيل الدخول أولاً.");
-                window.location.href = 'login.html';
+                // ----- هذا هو السطر الثاني الذي تم تصحيحه -----
+                window.location.href = './login.html';
             }
         });
 
-        // الجزء الرابع: برمجة وظيفة تغيير كلمة المرور
         form.addEventListener('submit', async (event) => {
             event.preventDefault();
             const currentPassword = currentPasswordInput.value;
@@ -77,9 +77,11 @@
             submitButton.disabled = true;
             submitButton.textContent = 'جارٍ الحفظ...';
             messageDiv.textContent = '';
+            messageDiv.className = 'message';
 
             try {
-                const response = await fetchWithAuth('https://ai-backend-jukm.onrender.com/change-password', {
+                // ----- هذا هو السطر الثالث الذي تم تصحيحه -----
+                const response = await fetchWithAuth(`${API_BASE_URL}/change-password`, {
                     method: 'POST',
                     body: JSON.stringify({ currentPassword, newPassword })
                 });
